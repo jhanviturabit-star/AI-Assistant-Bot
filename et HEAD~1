@@ -1,0 +1,199 @@
+[33mcommit aaa18858c898b7acda868501ea97d03c29832e19[m[33m ([m[1;36mHEAD -> [m[1;32mfeature/Project-structure[m[33m)[m
+Author: jhanviturabit-star <jhanvi.turabit@gmail.com>
+Date:   Thu Feb 12 19:13:57 2026 +0530
+
+    made a stable structure some-how
+
+[1mdiff --git a/.env b/.env[m
+[1mnew file mode 100644[m
+[1mindex 0000000..101dea3[m
+[1m--- /dev/null[m
+[1m+++ b/.env[m
+[36m@@ -0,0 +1,2 @@[m
+[32m+[m[32mGROK_API_KEY = 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[m
+[32m+[m[32mFLASK_BACKEND_URL=http://localhost:5000[m
+\ No newline at end of file[m
+[1mdiff --git a/.gitignore b/.gitignore[m
+[1mindex e69de29..9deb0c5 100644[m
+[1m--- a/.gitignore[m
+[1m+++ b/.gitignore[m
+[36m@@ -0,0 +1,10 @@[m
+[32m+[m[32m# Python virtual environment[m
+[32m+[m[32m.venv/[m
+[32m+[m[32menv/[m
+[32m+[m[32mvenv/[m
+[32m+[m[32m# Python cache files[m
+[32m+[m[32m__pycache__/[m
+[32m+[m[32m*.pyc[m
+[32m+[m[32m# Environment files[m
+[32m+[m[32m.env[m
+[32m+[m[32m*.env[m
+\ No newline at end of file[m
+[1mdiff --git a/backend/agent.py b/backend/agent.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..89d3edc[m
+[1m--- /dev/null[m
+[1m+++ b/backend/agent.py[m
+[36m@@ -0,0 +1,28 @@[m
+[32m+[m[32mfrom langchain_google_genai import ChatGoogleGenerativeAI[m
+[32m+[m[32mfrom langchain.agents import initialize_agent, AgentType[m
+[32m+[m[32mfrom backend.config import GROK_API_KEY[m
+[32m+[m[32mfrom backend.custom_tools.tickets import view_tickets, create_ticket, update_ticket[m
+[32m+[m[32m# from backend.tools.customers import view_customers, create_customer[m
+[32m+[m[32m# from backend.tools.stats import ticket_stats[m[41m  [m
+[32m+[m
+[32m+[m[32mllm = ChatGoogleGenerativeAI([m
+[32m+[m[32m    model="qwen/qwen3-32b",[m
+[32m+[m[32m    google_api_key=GROK_API_KEY,[m
+[32m+[m[32m    temperature=0[m
+[32m+[m[32m)[m
+[32m+[m
+[32m+[m[32mtools = [[m
+[32m+[m[32m    view_tickets,[m
+[32m+[m[32m    create_ticket,[m
+[32m+[m[32m    update_ticket,[m
+[32m+[m[32m    # view_customers,[m
+[32m+[m[32m    # create_customer,[m
+[32m+[m[32m    # ticket_stats[m
+[32m+[m[32m][m
+[32m+[m
+[32m+[m[32magent = initialize_agent([m
+[32m+[m[32m    tools=tools,[m
+[32m+[m[32m    llm=llm,[m
+[32m+[m[32m    agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,[m
+[32m+[m[32m    verbose=True[m
+[32m+[m[32m)[m
+\ No newline at end of file[m
+[1mdiff --git a/backend/config.py b/backend/config.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..b3406de[m
+[1m--- /dev/null[m
+[1m+++ b/backend/config.py[m
+[36m@@ -0,0 +1,7 @@[m
+[32m+[m[32mimport os[m
+[32m+[m[32mfrom dotenv import load_dotenv[m
+[32m+[m
+[32m+[m[32mload_dotenv()[m
+[32m+[m
+[32m+[m[32mGROK_API_KEY = os.getenv("GROK_API_KEY")[m
+[32m+[m[32mBACKEND_URL = os.getenv("FLASK_BACKEND_URL")[m
+[1mdiff --git a/backend/custom_tools/__init__.py b/backend/custom_tools/__init__.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..a9b5873[m
+[1m--- /dev/null[m
+[1m+++ b/backend/custom_tools/__init__.py[m
+[36m@@ -0,0 +1,2 @@[m
+[32m+[m[32mfrom .customers import *[m
+[32m+[m[32mfrom .tickets import *[m
+\ No newline at end of file[m
+[1mdiff --git a/backend/custom_tools/customers.py b/backend/custom_tools/customers.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..df238ec[m
+[1m--- /dev/null[m
+[1m+++ b/backend/custom_tools/customers.py[m
+[36m@@ -0,0 +1,24 @@[m
+[32m+[m[32mimport requests[m
+[32m+[m[32mfrom langchain.tools import tool[m
+[32m+[m[32mfrom config import BACKEND_URL[m[41m [m
+[32m+[m
+[32m+[m[32m@tool[m
+[32m+[m[32mdef get_all_customers(token: str) -> str:[m
+[32m+[m[32m    """Fetch all customers from the CRM dynamically using user's JWT"""[m
+[32m+[m[32m    headers = {"Authorization": token}[m
+[32m+[m
+[32m+[m[32m    response = requests.get(f"{BACKEND_URL}/customers/", headers=headers)[m
+[32m+[m[32m    return str(response.json())[m
+[32m+[m
+[32m+[m
+[32m+[m[32m@tool[m
+[32m+[m[32mdef create_customer(name: str, email: str, phone: int, token: str) -> str:[m
+[32m+[m[32m    """create customer."""[m
+[32m+[m[32m    headers = {"Authorization": token}[m
+[32m+[m[32m    payload = {[m
+[32m+[m[32m        "c_name": name,[m
+[32m+[m[32m        "c_email": email,[m
+[32m+[m[32m        "phone": phone[m
+[32m+[m[32m    }[m
+[32m+[m[32m    response = requests.post(f"{BACKEND_URL}/customers/", json=payload, headers=headers)[m
+[32m+[m[32m    return str(response.json())[m
+[1mdiff --git a/backend/custom_tools/stats.py b/backend/custom_tools/stats.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..e69de29[m
+[1mdiff --git a/backend/custom_tools/tickets.py b/backend/custom_tools/tickets.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..f02de55[m
+[1m--- /dev/null[m
+[1m+++ b/backend/custom_tools/tickets.py[m
+[36m@@ -0,0 +1,44 @@[m
+[32m+[m[32mimport requests[m
+[32m+[m[32mfrom langchain.tools import tool[m
+[32m+[m[32mfrom config import BACKEND_URL  # your Flask base URL from env[m
+[32m+[m
+[32m+[m[32m@tool[m
+[32m+[m[32mdef get_all_tickets(token: str) -> str:[m
+[32m+[m[32m    """Fetch all tickets from the CRM dynamically using user's JWT"""[m
+[32m+[m[32m    headers = {"Authorization": token}[m
+[32m+[m
+[32m+[m[32m    response = requests.get(f"{BACKEND_URL}/tickets/", headers=headers)[m
+[32m+[m[32m    return str(response.json())[m
+[32m+[m
+[32m+[m
+[32m+[m[32m@tool[m
+[32m+[m[32mdef create_ticket(title: str, description: str, priority: str, customer_id: int, token: str) -> str:[m
+[32m+[m[32m    """create ticket."""[m
+[32m+[m[32m    headers = {"Authorization": token}[m
+[32m+[m[32m    payload = {[m
+[32m+[m[32m        "t_title": title,[m
+[32m+[m[32m        "t_description": description,[m
+[32m+[m[32m        "priority": priority,[m
+[32m+[m[32m        "c_id": customer_id[m
+[32m+[m[32m    }[m
+[32m+[m[32m    response = requests.post(f"{BACKEND_URL}/tickets/", json=payload, headers=headers)[m
+[32m+[m[32m    return str(response.json())[m
+[32m+[m
+[32m+[m
+[32m+[m
+[32m+[m[32m# FLASK_BASE_URL = "http://127.0.0.1:5000"  # your Flask port[m
+[32m+[m
+[32m+[m[32m# TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxNSwicm9sZSI6IkFHRU5UIiwiZXhwIjoxNzcwOTIxOTUzfQ.u_YC12MYaA2Tvugkalj6DxaTr8kEB-Ceeyqn1BwpZ9Y"[m
+[32m+[m
+[32m+[m[32m# @tool[m
+[32m+[m[32m# def get_tickets(token:str) -> str:[m
+[32m+[m[32m#     """[m
+[32m+[m[32m#     Fetch all tickets from the CRM.[m
+[32m+[m[32m#     Expects `token` as the Authorization header.[m
+[32m+[m[32m#     """[m
+[32m+[m[32m#     headers = {[m
+[32m+[m[32m#         "Authorization": token[m
+[32m+[m[32m#     }[m
+[32m+[m[32m#     response = requests.get(f"{FLASK_BASE_URL}/tickets/", headers=headers)[m
+[32m+[m
+[32m+[m[32m#     return str(response.json())[m
+[1mdiff --git a/backend/main.py b/backend/main.py[m
+[1mnew file mode 100644[m
+[1mindex 0000000..bf43d4a[m
+[1m--- /dev/null[m
+[1m+++ b/backend/main.py[m
+[36m@@ -0,0 +1,144 @@[m
+[32m+[m[32m# from fastapi import FastAPI, Header[m
+[32m+[m[32m# from pydantic import BaseModel[m
+[32m+[m[32m# from langchain_openai import ChatOpenAI[m
+[32m+[m[32m# from langchain.agents import initialize_agent, AgentType[m
+[32m+[m
+[32m+[m[32m# from tools.tickets import get_all_tickets, create_ticket[m
+[32m+[m[32m# from tools.customers import get_all_customers, create_customer[m
+[32m+[m[32m# from tools.stats import get_ticket_stats[m
+[32m+[m[32m# from config import GROK_API_KEY[m[41m  [m
+[32m+[m
+[32m+[m[32m# app = FastAPI()[m
+[32m+[m
+[32m+[m[32m# llm = ChatOpenAI([m
+[32m+[m[32m#     model="qwen/qwen3-32b",[m
+[32m+[m[32m#     api_key=GROK_API_KEY,[m[41m [m
+[32m+[m[32m#     base_url="https://api.groq.com/openai/v1",[m
+[32m+[m[32m#     temperature=0[m
+[32m+[m[32m# )[m
+[32m+[m
+[32m+[m[32m# tools = [get_all_tickets, create_ticket, get_all_customers, create_customer, get_ticket_stats][m
+[32m+[m
+[32m+[m[32m# agent = in
