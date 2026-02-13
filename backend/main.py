@@ -41,18 +41,21 @@
 
 #     return {"response": response}
 
-
-
-from fastapi import FastAPI, Header
+from fastapi.security import HTTPBearer
+from fastapi import Depends, FastAPI
 from pydantic import BaseModel
 from langchain_groq import ChatGroq
 from langchain.agents import create_agent
 from langchain.tools import tool
 
-from custom_tools import *
-from config import GROK_API_KEY
+from .custom_tools import *
+from backend.auth import auth_router
+from backend.config import GROK_API_KEY
+from backend.context import current_token
 
 app = FastAPI(title="CRM AI Assistant")
+
+app.include_router(auth_router)
 
 # ---------------------
 # LLM Setup
@@ -66,7 +69,7 @@ llm = ChatGroq(
 # ---------------------
 # Tools Setup
 # ---------------------
-tools = [create_customer, create_ticket, get_all_customers, get_all_tickets]
+tools = [create_customer, create_ticket, get_all_customers, get_all_tickets, get_filtered_tickets, get_ticket_summary, update_ticket_status]
 # tools = [
 #     Too(
 #         name_or_callable="Get_All_Tickets"
@@ -93,12 +96,10 @@ tools = [create_customer, create_ticket, get_all_customers, get_all_tickets]
 # ---------------------
 # Agent Setup
 # ---------------------
-# Pull the React prompt template
 
 prompt = """
 You are a CRM agent assistant. You can have the tools {tools} for performing actions.
 """
-
 
 # Create the agent
 agent = create_agent(llm, tools=tools, system_prompt=prompt)
@@ -120,18 +121,30 @@ class ChatRequest(BaseModel):
 # ---------------------
 # Chat Endpoint
 # ---------------------
+security =  HTTPBearer()
+
 @app.post("/chat")
-async def chat(request: ChatRequest, authorization: str = Header(None)):
+async def chat(request: ChatRequest, credentials = Depends(security)):
     """chat API"""
-    if not authorization:
-        return {"error": "Authorization header missing. Please log in first."}
+
+    raw_token = credentials.credentials
+
+    print("RAW credentials.credentials:", raw_token)
+
+    if raw_token and raw_token.startswith("Bearer "):
+        raw_token = raw_token.replace("Bearer ", "")
+
+    current_token.set(raw_token)
 
     try:
-        # Run the agent
         response = agent.invoke({
-            "input": request.message
+            "messages": [
+                {"role": "user", "content": request.message}
+            ]
         })
-        return {"response": response["output"]}
+        return {"response": response["messages"][-1].content}
+
+
     except Exception as e:
         return {"error": str(e)}
 
