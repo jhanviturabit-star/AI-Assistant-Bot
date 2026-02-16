@@ -160,3 +160,37 @@ def update_ticket_status(
     )
 
     return json.dumps(response.json(), indent=2)
+
+@tool
+def reassign_ticket(ticket_id: int, new_agent_id: int) -> dict:
+    """
+    Reassign a ticket to another agent (admin only)
+    """
+    token = current_token.get()
+
+    # Decode JWT to ensure user is admin
+    import jwt
+    from backend.config import PROJECT1_JWT_SECRET_KEY
+    try:
+        decoded = jwt.decode(token, PROJECT1_JWT_SECRET_KEY, algorithms=["HS256"])
+        user_role = decoded.get("role")
+        if user_role != "admin":
+            return {"error": "Only admin users can reassign tickets"}
+    except Exception:
+        return {"error": "Invalid token"}
+
+    headers = {"Authorization": f"Bearer {token}"}
+
+    payload = {"new_agent_id": new_agent_id}
+
+    response = requests.patch(
+        f"{BACKEND_URL}/tickets/{ticket_id}/reassign",
+        json=payload,
+        headers=headers
+    )
+
+    try:
+        return response.json()
+    except Exception:
+        return {"error": response.text}
+
