@@ -50,7 +50,7 @@ from langchain.tools import tool
 
 from .custom_tools import *
 from backend.auth import auth_router
-from backend.config import GROK_API_KEY
+from backend.config import GROQ_API_KEY
 from backend.context import current_token
 
 app = FastAPI(title="CRM AI Assistant")
@@ -62,7 +62,7 @@ app.include_router(auth_router)
 # ---------------------
 llm = ChatGroq(
     model="llama-3.3-70b-versatile",
-    api_key=GROK_API_KEY,
+    api_key=GROQ_API_KEY,
     temperature=0
 )
 
