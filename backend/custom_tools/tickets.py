@@ -1,5 +1,6 @@
 from langchain.tools import tool
 import requests
+import json
 from backend.config import BACKEND_URL, PROJECT1_JWT_SECRET_KEY  
 from typing import Optional
 import jwt
@@ -12,7 +13,8 @@ def get_all_tickets() -> dict:
     headers = {"Authorization": f"Bearer {token}"}
 
     response = requests.get(f"{BACKEND_URL}/tickets/", headers=headers)
-    return response.json()
+    return json.dumps(response.json(), indent=2)
+
 
 @tool
 def create_ticket(title: str, description: str, priority: str, customer_id: int) -> dict:
@@ -26,7 +28,8 @@ def create_ticket(title: str, description: str, priority: str, customer_id: int)
         "c_id": customer_id
     }
     response = requests.post(f"{BACKEND_URL}/tickets/", json=payload, headers=headers)
-    return response.json()
+    return json.dumps(response.json(), indent=2)
+
 
 # =====================================================
 # ADVANCED AI TICKET TOOLS (Filtered / Summary / Update)
@@ -62,10 +65,11 @@ def get_filtered_tickets(
     if priority:
         tickets = [t for t in tickets if t.get("priority") == priority]
 
-    return {
+    return json.dumps({
         "count": len(tickets),
         "tickets": tickets
-    }
+    }, indent=2)
+
 
 # -----------------------------
 # Quick Ticket Summary
@@ -88,9 +92,11 @@ def get_ticket_summary() -> dict:
     print("Raw response:", response.text)
 
     if response.status_code != 200:
-        return {"error": f"Backend error {response.status_code}",
-                "details": response.text
-        }
+        return json.dumps({
+            "error": f"Backend error {response.status_code}",
+            "details": response.text
+        }, indent=2)
+
 
     try:
         tickets = response.json()
@@ -114,7 +120,8 @@ def get_ticket_summary() -> dict:
         summary["by_status"][status] = summary["by_status"].get(status, 0) + 1
         summary["by_priority"][priority] = summary["by_priority"].get(priority, 0) + 1
 
-    return summary
+    return json.dumps(summary, indent=2)
+
 
 # -----------------------------
 # Update Ticket Status / Priority
@@ -135,7 +142,7 @@ def update_ticket_status(
         user_role = decoded.get("role")
         user_id = decoded.get("user_id")
     except Exception:
-        return {"error": "Invalid token"}
+        return json.dumps({"error": "Invalid token"})
 
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -152,4 +159,4 @@ def update_ticket_status(
         headers=headers
     )
 
-    return response.json()
+    return json.dumps(response.json(), indent=2)

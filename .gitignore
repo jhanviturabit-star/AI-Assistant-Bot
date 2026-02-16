@@ -7,3 +7,4 @@ __pycache__/
 *.pyc
 # Environment files
 .env
+et HEAD~1
