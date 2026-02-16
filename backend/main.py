@@ -1,46 +1,3 @@
-# from fastapi import FastAPI, Header
-# from pydantic import BaseModel
-# from langchain_openai import ChatOpenAI
-# from langchain.agents import initialize_agent, AgentType
-
-# from tools.tickets import get_all_tickets, create_ticket
-# from tools.customers import get_all_customers, create_customer
-# from tools.stats import get_ticket_stats
-# from config import GROK_API_KEY  
-
-# app = FastAPI()
-
-# llm = ChatOpenAI(
-#     model="qwen/qwen3-32b",
-#     api_key=GROK_API_KEY, 
-#     base_url="https://api.groq.com/openai/v1",
-#     temperature=0
-# )
-
-# tools = [get_all_tickets, create_ticket, get_all_customers, create_customer, get_ticket_stats]
-
-# agent = initialize_agent(
-#     tools=tools,
-#     llm=llm,
-#     agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-#     verbose=True
-# )
-
-# class ChatRequest(BaseModel):
-#     message: str
-
-# @app.post("/chat")
-# async def chat(request: ChatRequest, authorization: str = Header(None)):
-#     if not authorization:
-#         return {"error": "Authorization header missing. Please log in first."}
-
-#     response = agent.run({
-#         "input": request.message,
-#         "token": authorization  # dynamically forward JWT
-#     })
-
-#     return {"response": response}
-
 from fastapi.security import HTTPBearer
 from fastapi import Depends, FastAPI
 from pydantic import BaseModel
@@ -52,10 +9,12 @@ from .custom_tools import *
 from backend.auth import auth_router
 from backend.config import GROQ_API_KEY
 from backend.context import current_token
+from backend.routes import tickets, customers
 
 app = FastAPI(title="CRM AI Assistant")
 
 app.include_router(auth_router)
+app.include_router(tickets.router)
 
 # ---------------------
 # LLM Setup
