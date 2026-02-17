@@ -3,18 +3,21 @@ from fastapi import Depends, FastAPI
 from pydantic import BaseModel
 from langchain_groq import ChatGroq
 from langchain.agents import create_agent
-from langchain.tools import tool
+#from langchain.tools import tool
 
 from .custom_tools import *
 from backend.auth import auth_router
 from backend.config import GROQ_API_KEY
 from backend.context import current_token
 from backend.routes import tickets, customers
+from backend.auth import get_current_user
 
 app = FastAPI(title="CRM AI Assistant")
 
 app.include_router(auth_router)
 app.include_router(tickets.router)
+app.include_router(customers.router)
+
 
 # ---------------------
 # LLM Setup
@@ -57,7 +60,11 @@ tools = [create_customer, create_ticket, get_all_customers, get_all_tickets, get
 # ---------------------
 
 prompt = """
-You are a CRM agent assistant. You can have the tools {tools} for performing actions.
+You are a CRM agent assistant. 
+IMPORTANT:
+- Use tools whenever the user asks to create, update, retrieve, filter, or summarize CRM data.
+- Do NOT answer from memory.
+- Always call the appropriate tool for CRM operations.
 """
 
 # Create the agent
@@ -83,17 +90,10 @@ class ChatRequest(BaseModel):
 security =  HTTPBearer()
 
 @app.post("/chat")
-async def chat(request: ChatRequest, credentials = Depends(security)):
+async def chat(request: ChatRequest, user=Depends(get_current_user)):
     """chat API"""
 
-    raw_token = credentials.credentials
-
-    print("RAW credentials.credentials:", raw_token)
-
-    if raw_token and raw_token.startswith("Bearer "):
-        raw_token = raw_token.replace("Bearer ", "")
-
-    current_token.set(raw_token)
+    current_token.set(user["token"])
 
     try:
         response = agent.invoke({

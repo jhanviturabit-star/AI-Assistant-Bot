@@ -5,31 +5,21 @@ from backend.config import BACKEND_URL, PROJECT1_JWT_SECRET_KEY
 from typing import Optional
 import jwt
 from backend.context import current_token
+from backend.services.tickets_api_client import create_ticket_api, get_all_tickets_api, update_ticket_status_api, reassign_ticket_api
 
 @tool
 def get_all_tickets() -> dict:
     """Fetch all tickets from the CRM dynamically using user's JWT"""
     token = current_token.get()
-    headers = {"Authorization": f"Bearer {token}"}
-
-    response = requests.get(f"{BACKEND_URL}/tickets/", headers=headers)
-    return json.dumps(response.json(), indent=2)
+    return get_all_tickets_api(token)
 
 
 @tool
 def create_ticket(title: str, description: str, priority: str, customer_id: int) -> dict:
     """create ticket."""
     token = current_token.get()
-    headers = {"Authorization": f"Bearer {token}"}
-    payload = {
-        "t_title": title,
-        "t_description": description,
-        "priority": priority,
-        "c_id": customer_id
-    }
-    response = requests.post(f"{BACKEND_URL}/tickets/", json=payload, headers=headers)
-    return json.dumps(response.json(), indent=2)
-
+    return create_ticket_api(title, description, priority, customer_id, token)
+    
 
 # =====================================================
 # ADVANCED AI TICKET TOOLS (Filtered / Summary / Update)
@@ -46,30 +36,25 @@ def get_filtered_tickets(
     Fetch tickets filtered by status or priority.
     """
     token = current_token.get()
+    tickets = get_all_tickets_api(token)
 
-    headers = {"Authorization": f"Bearer {token}"}
+    if not isinstance(tickets, list):
+        return {'error': tickets}
+    
+    summary = {
+        "total": len(tickets),
+        "by_status": {},
+        "by_priority": {}
+    }
 
-    response = requests.get(f"{BACKEND_URL}/tickets/", headers=headers)
+    for t in tickets:
+        status = t.get("t_status")
+        priority = t.get("priority")
 
-    data = response.json()
+        summary["by_status"][status] = summary["by_status"].get(status, 0) + 1
+        summary["priority"][priority] = summary["priority"].get(priority, 0) + 1
 
-    if response.status_code != 200:
-        return {"error": data}
-
-    tickets = data
-
-    # Apply filtering on AI layer
-    if status:
-        tickets = [t for t in tickets if t.get("t_status") == status]
-
-    if priority:
-        tickets = [t for t in tickets if t.get("priority") == priority]
-
-    return json.dumps({
-        "count": len(tickets),
-        "tickets": tickets
-    }, indent=2)
-
+    return summary
 
 # -----------------------------
 # Quick Ticket Summary
@@ -136,30 +121,7 @@ def update_ticket_status(
     """
     token = current_token.get()
     
-    # Decode JWT to extract role & user_id
-    try:
-        decoded = jwt.decode(token, PROJECT1_JWT_SECRET_KEY, algorithms=["HS256"])
-        user_role = decoded.get("role")
-        user_id = decoded.get("user_id")
-    except Exception:
-        return json.dumps({"error": "Invalid token"})
-
-    headers = {"Authorization": f"Bearer {token}"}
-
-    payload = {
-        "t_status": status,
-        "priority": priority,
-        "role": user_role,
-        "user_id": user_id
-    }
-
-    response = requests.patch(
-        f"{BACKEND_URL}/tickets/{ticket_id}",
-        json=payload,
-        headers=headers
-    )
-
-    return json.dumps(response.json(), indent=2)
+    return update_ticket_status_api(ticket_id, status, priority, token)
 
 @tool
 def reassign_ticket(ticket_id: int, new_agent_id: int) -> dict:
@@ -168,29 +130,4 @@ def reassign_ticket(ticket_id: int, new_agent_id: int) -> dict:
     """
     token = current_token.get()
 
-    # Decode JWT to ensure user is admin
-    import jwt
-    from backend.config import PROJECT1_JWT_SECRET_KEY
-    try:
-        decoded = jwt.decode(token, PROJECT1_JWT_SECRET_KEY, algorithms=["HS256"])
-        user_role = decoded.get("role")
-        if user_role != "admin":
-            return {"error": "Only admin users can reassign tickets"}
-    except Exception:
-        return {"error": "Invalid token"}
-
-    headers = {"Authorization": f"Bearer {token}"}
-
-    payload = {"new_agent_id": new_agent_id}
-
-    response = requests.patch(
-        f"{BACKEND_URL}/tickets/{ticket_id}/reassign",
-        json=payload,
-        headers=headers
-    )
-
-    try:
-        return response.json()
-    except Exception:
-        return {"error": response.text}
-
+    return reassign_ticket_api(ticket_id, new_agent_id, token)

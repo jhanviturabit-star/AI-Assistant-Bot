@@ -1,8 +1,10 @@
 from fastapi import HTTPException, APIRouter, Depends
+from jose import jwt, JWTError
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from backend.config import BACKEND_URL
+from backend.config import BACKEND_URL, PROJECT1_JWT_SECRET_KEY
 from pydantic import BaseModel
 import requests
+
 
 auth_router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -58,17 +60,25 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     """
     Extract and validate the user from the bearer token via Project1 API
     """
-    raw_token = credentials.credentials
-    if raw_token.startswith("Bearer "):
-        raw_token = raw_token.replace("Bearer ", "")
+    token = credentials.credentials
 
     try:
-        response = requests.get(f"{BACKEND_URL}/auth/me", headers={"Authorization": f"Bearer {raw_token}"})
-        if response.status_code != 200:
-            raise HTTPException(status_code=401, detail="Invalid or expired token")
-        return response.json()  # should return user info with id, role, email, etc.
-    except requests.exceptions.RequestException:
-        raise HTTPException(status_code=500, detail="Authentication service unreachable")
+        payload = jwt.decode(token, PROJECT1_JWT_SECRET_KEY, algorithms = ["HS256"])
+
+        user_id = payload.get("user_id")
+        role = payload.get("role")
+
+        if user_id is None or role is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        
+        return {
+            "user_id": user_id,
+            "role": role,
+            "token": token
+        }
+
+    except JWTError:
+        raise HTTPException(status_code=401, detail="invalid or expired token")
 
 
 def admin_required(credentials: HTTPAuthorizationCredentials = Depends(security)):
@@ -76,6 +86,6 @@ def admin_required(credentials: HTTPAuthorizationCredentials = Depends(security)
     Ensure the user is an admin
     """
     user = get_current_user(credentials)
-    if user.get("role") != "admin":
+    if user.get[("role").upper] != "admin":
         raise HTTPException(status_code=403, detail="Admin privileges required")
     return user

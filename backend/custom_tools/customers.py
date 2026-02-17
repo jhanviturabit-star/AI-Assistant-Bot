@@ -1,24 +1,22 @@
 import requests
 from langchain.tools import tool
 from backend.config import BACKEND_URL 
+from backend.context import current_token
+from backend.services.customers_api_client import create_customer_api, get_all_customers_api
 
 @tool
 def get_all_customers(token: str) -> str:
     """Fetch all customers from the CRM dynamically using user's JWT"""
-    headers = {"Authorization": f"Bearer {token}"}
-
-    response = requests.get(f"{BACKEND_URL}/customers/", headers=headers)
-    return str(response.json())
+    token = current_token.get()
+    result = get_all_customers_api(token)
+    return str(result)
 
 
 @tool
-def create_customer(name: str, email: str, phone: int, token: str) -> str:
-    """create customer."""
-    headers = {"Authorization": f"Bearer {token}"}
-    payload = {
-        "c_name": name,
-        "c_email": email,
-        "phone": phone
-    }
-    response = requests.post(f"{BACKEND_URL}/customers/", json=payload, headers=headers)
-    return str(response.json())
+def create_customer(name: str, email: str, phone: int) -> str:
+    """Create Customer."""
+    token = current_token.get()
+    print("TOKEN IN TOOL:", token)
+    print(repr(phone))
+    result = create_customer_api(name=name, email=email, phone=str(phone), token=token)
+    return str(result)
