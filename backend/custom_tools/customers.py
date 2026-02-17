@@ -16,7 +16,6 @@ def get_all_customers(token: str) -> str:
 def create_customer(name: str, email: str, phone: int) -> str:
     """Create Customer."""
     token = current_token.get()
-    print("TOKEN IN TOOL:", token)
     print(repr(phone))
     result = create_customer_api(name=name, email=email, phone=str(phone), token=token)
     return str(result)
