@@ -61,10 +61,11 @@ tools = [create_customer, create_ticket, get_all_customers, get_all_tickets, get
 
 prompt = """
 You are a CRM agent assistant. 
-IMPORTANT:
-- Use tools whenever the user asks to create, update, retrieve, filter, or summarize CRM data.
-- Do NOT answer from memory.
-- Always call the appropriate tool for CRM operations.
+IMPORTANT RULES:
+- Use tools for CRM operations.
+- Call a tool only once per user request.
+- After receiving the tool result, respond to the user.
+- Do NOT call the same tool multiple times for the same request.
 """
 
 # Create the agent

@@ -1,7 +1,7 @@
 # backend/routes/customers.py
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from typing import Optional, List, Dict
+import uuid
 from backend.auth import get_current_user, admin_required
 from backend.services.customers_api_client import create_customer_api, get_all_customers_api
 
@@ -28,5 +28,6 @@ def list_customers(user=Depends(get_current_user)):
 @router.post("/create")
 def create_customer_route(customer=CreateCustomer, user=Depends(get_current_user)):
     result = create_customer_api(customer.name, customer.email, customer.phone, user["token"])
+    print("TOOL EXECUTION ID:", uuid.uuid4())
     return {"message": "Customer created successfully", result:"customer"}
 

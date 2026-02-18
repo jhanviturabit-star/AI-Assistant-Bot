@@ -30,8 +30,9 @@ class TicketStatusUpdate(BaseModel):
 # Routes
 # ---------------------
 
-@router.post("/create")
-def create_ticket_route(ticket: TicketCreate, user=Depends(get_current_user)):
+#Create Ticket
+@router.post("/")
+def create_ticket(ticket: TicketCreate, user=Depends(get_current_user)):
     result = create_ticket_api(
         ticket.title,
         ticket.description,
@@ -41,26 +42,26 @@ def create_ticket_route(ticket: TicketCreate, user=Depends(get_current_user)):
     )
     return {"message": f"Ticket #{result['id']} created successfully."}
 
-
-@router.get("/list")
+#List Tickets
+@router.get("/")
 def list_tickets(user=Depends(get_current_user)):
     tickets = get_all_tickets_api(user["token"])
     return {"tickets": tickets}
 
-
-@router.post("/update_status")
-def update_ticket_status_route(data: TicketStatusUpdate, user=Depends(get_current_user)):
+#Update ticket status
+@router.patch("/update_status")
+def update_ticket_status(ticket_id: int, data: TicketStatusUpdate, user=Depends(get_current_user)):
     updated = update_ticket_status_api(
-        data.ticket_id,
+        ticket_id,
         data.status,
         data.priority,
         user["token"]
     )
     return {"ticket": updated}
 
-
-@router.post("/reassign")
-def reassign_ticket_route(data: TicketReassign, user=Depends(admin_required)):
+#Reassign ticket (Admin only)
+@router.patch("/{ticket_id}/assign")
+def reassign_ticket(ticket_id: int, data: TicketReassign, user=Depends(admin_required)):
     result = reassign_ticket_api(
         data.ticket_id,
         data.agent_id,
@@ -68,7 +69,7 @@ def reassign_ticket_route(data: TicketReassign, user=Depends(admin_required)):
     )
     return {"ticket": result}
 
-
+#Ticket summary
 @router.get("/summary")
 def ticket_summary(user=Depends(get_current_user)):
     tickets = get_all_tickets_api(user["token"])

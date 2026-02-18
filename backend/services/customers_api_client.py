@@ -14,9 +14,13 @@ def create_customer_api(name: str, email: str, phone: int, token: str):
     }
 
     response = requests.post(f"{BACKEND_URL}/customers/create", json=payload, headers=headers)
+    
+    print("Status Code:", response.status_code)
+    print("Raw Response:", response.text)
+
 
     if response.status_code not in (200, 201):
-        raise Exception(response.text)
+        return response.json()
     
     return response.json()
 
@@ -29,6 +33,6 @@ def get_all_customers_api(token: str):
     response = requests.get(f"{BACKEND_URL}/customers/", headers=headers)
 
     if response.status_code not in (200, 201):
-        raise Exception(response.text)
+        return response.json()
     
     return response.json()
