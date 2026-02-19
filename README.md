@@ -68,5 +68,5 @@ The AI:
 ### 1️⃣ Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/your-repo-name.git
+git clone https://github.com/jhanviturabit-star/ai-assistant-bot.git
 cd ai-assistant-bot
