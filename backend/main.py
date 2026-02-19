@@ -66,18 +66,13 @@ IMPORTANT RULES:
 - Call a tool only once per user request.
 - After receiving the tool result, respond to the user.
 - Do NOT call the same tool multiple times for the same request.
+- If the user asks anything outside CRM operations:
+Respond ONLY with:
+"I'm a CRM assistant and can only help with CRM-related tasks like customers and tickets."
 """
 
 # Create the agent
 agent = create_agent(llm, tools=tools, system_prompt=prompt)
-
-# Create the agent executor
-# agent_executor = AgentExecutor(
-#     agent=agent,
-#     tools=tools,
-#     verbose=True,
-#     handle_parsing_errors=True
-# )
 
 # ---------------------
 # Request Model

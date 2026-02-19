@@ -31,7 +31,7 @@ def get_all_customers_api(token: str):
     headers = {"Authorization": f"Bearer {token}"}
 
     response = requests.get(f"{BACKEND_URL}/customers/", headers=headers)
-
+    print(response)
     if response.status_code not in (200, 201):
         return response.json()
     

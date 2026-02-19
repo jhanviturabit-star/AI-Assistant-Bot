@@ -6,7 +6,21 @@ import requests
 # -------------------------
 BACKEND_URL = "http://localhost:8000" 
 
-st.set_page_config(page_title="CRM AI Assistant", page_icon=" ")
+st.set_page_config(
+    page_title="CRM AI Assistant",
+    page_icon="🤖",
+    layout="centered"
+)
+
+st.markdown(
+    """
+    <h1 style='text-align: center;'>🤖 CRM AI Assistant</h1>
+    <p style='text-align: center; color: grey;'>
+        Interact with tickets & customers using natural language
+    </p>
+    """,
+    unsafe_allow_html=True
+)
 
 # -----------------------
 # Session State Init
@@ -56,12 +70,6 @@ def send_message(message):
         return response.json().get("response", "No response")
     else:
         return f"Error: {response.text}"
-    
-# -------------------------
-# UI
-# -------------------------
-
-st.title("CRM AI Assistant")
 
 # -------------------------
 # LOGIN SCREEN

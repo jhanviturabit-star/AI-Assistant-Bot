@@ -30,10 +30,11 @@ def create_ticket(title: str, description: str, priority: str, customer_id: int)
 # -----------------------------
 @tool
 def get_filtered_tickets(
+    email: Optional[str] = None,
     status: Optional[str] = None,
     priority: Optional[str] = None) -> dict:
     """
-    Fetch tickets filtered by status or priority.
+    Fetch tickets filtered by customer email, status or priority.
     """
     token = current_token.get()
     tickets = get_all_tickets_api(token)
@@ -41,21 +42,25 @@ def get_filtered_tickets(
     if not isinstance(tickets, list):
         return {'error': tickets}
     
-    summary = {
-        "total": len(tickets),
-        "by_status": {},
-        "by_priority": {}
-    }
+    filtered = []
 
     for t in tickets:
-        status = t.get("t_status")
-        priority = t.get("priority")
+        if status and t.get("t_status", "").lower() != status.lower():
+            continue
 
-        summary["by_status"][status] = summary["by_status"].get(status, 0) + 1
-        summary["priority"][priority] = summary["priority"].get(priority, 0) + 1
+        if priority and t.get("priority", "").lower() != status.lower():
+            continue
 
-    return summary
+        if email and t.get("email", "").lower() != status.lower():
+            continue
 
+        filtered.append(t)
+
+        return {
+            "count": len(filtered),
+            "tickets": filtered
+        }
+    
 # -----------------------------
 # Quick Ticket Summary
 # -----------------------------
@@ -106,7 +111,6 @@ def get_ticket_summary() -> dict:
         summary["by_priority"][priority] = summary["by_priority"].get(priority, 0) + 1
 
     return json.dumps(summary, indent=2)
-
 
 # -----------------------------
 # Update Ticket Status / Priority
